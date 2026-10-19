@@ -1,0 +1,21 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+
+# 서비스워커는 항상 최신을 받아야 갱신이 반영된다
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# 문제 데이터도 갱신이 바로 보이도록
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="JLPT N2 어휘·한자·문법 학습. 간격 반복으로 매일 외우고 자투리 시간에 바로 학습." />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<meta name="theme-color" content="#26365e" />
+<title>니혼고 · JLPT N2</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon-192.png" type="image/png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="니혼고" />
+<link rel="stylesheet" href="css/base.css" />
+</head>
+<body>
+
+<div class="shell">
+  <header class="masthead">
+    <div>
+      <h1 class="wordmark">니혼고<span class="dot">.</span></h1>
+      <span class="tagline">JLPT N2 · 어휘 한자 문법</span>
+    </div>
+    <div class="scoreboard">
+      <div class="score">
+        <div class="score-n t" id="scToday">0/20</div>
+        <div class="score-l">오늘 학습</div>
+      </div>
+      <div class="score">
+        <div class="score-n a" id="scStreak">0</div>
+        <div class="score-l">연속 학습일</div>
+      </div>
+      <div class="score">
+        <div class="score-n g" id="scKnown">0/0</div>
+        <div class="score-l">외운 항목</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" id="tabQuick">오늘 학습<span class="badge due" id="dueBadge" hidden></span></button>
+    <button class="tab" role="tab" aria-selected="false" id="tabVocab">단어</button>
+    <button class="tab" role="tab" aria-selected="false" id="tabKanji">한자</button>
+    <button class="tab" role="tab" aria-selected="false" id="tabGrammar">문법</button>
+    <button class="tab" role="tab" aria-selected="false" id="tabWeak">약점<span class="badge" id="weakBadge" hidden></span></button>
+    <button class="tab" role="tab" aria-selected="false" id="tabStats">진도</button>
+  </nav>
+
+  <!-- ══ 오늘 학습 (자투리 시간용) ══ -->
+  <section class="view on" id="viewQuick" role="tabpanel">
+    <div class="card qpanel">
+      <div class="qtop">
+        <div class="qgoal">
+          <div class="qgoal-l">오늘 목표</div>
+          <div class="qgoal-bar"><div class="qgoal-f" id="qGoalFill"></div></div>
+          <div class="qgoal-n" id="qGoalNum"></div>
+        </div>
+        <div class="qstreak">
+          <div class="qstreak-n" id="qStreak">0</div>
+          <div class="qstreak-l">연속 학습일</div>
+        </div>
+      </div>
+      <div class="qwhy" id="qWhy"></div>
+      <div id="qCard"></div>
+      <div class="qnav">
+        <button class="btn btn-out btn-sm" id="qSkip">건너뛰기</button>
+        <button class="btn btn-out btn-sm" id="qSwitch">다른 종류로</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 단어 ══ -->
+  <section class="view" id="viewVocab" role="tabpanel">
+    <div class="split">
+      <aside class="card pad">
+        <div class="fgroup">
+          <div class="flabel">품사</div>
+          <div class="chips" id="vPos"></div>
+        </div>
+        <div class="fgroup">
+          <div class="flabel">암기 상태</div>
+          <select id="vState">
+            <option value="all">전체</option>
+            <option value="due">복습 예정</option>
+            <option value="todo">아직 안 본 것</option>
+            <option value="unknown">모르는 것</option>
+            <option value="unsure">애매한 것</option>
+            <option value="known">외운 것</option>
+          </select>
+        </div>
+        <button class="reset-btn" id="vReset">필터 초기화</button>
+        <div class="listwrap">
+          <div class="flabel" style="padding:12px 15px 6px;">단어 <span id="vCount" style="font-family:var(--mono);"></span></div>
+          <div class="qlist" id="vList"></div>
+        </div>
+      </aside>
+      <div class="card wordcard" id="vCard"></div>
+    </div>
+  </section>
+
+  <!-- ══ 한자 ══ -->
+  <section class="view" id="viewKanji" role="tabpanel">
+    <div class="split">
+      <aside class="card pad">
+        <div class="fgroup">
+          <div class="flabel">레벨</div>
+          <div class="chips" id="kLevel"></div>
+        </div>
+        <div class="fgroup">
+          <div class="flabel">암기 상태</div>
+          <select id="kState">
+            <option value="all">전체</option>
+            <option value="due">복습 예정</option>
+            <option value="todo">아직 안 본 것</option>
+            <option value="unknown">모르는 것</option>
+            <option value="unsure">애매한 것</option>
+            <option value="known">외운 것</option>
+          </select>
+        </div>
+        <button class="reset-btn" id="kReset">필터 초기화</button>
+        <div class="listwrap">
+          <div class="flabel" style="padding:12px 15px 6px;">한자 <span id="kCount" style="font-family:var(--mono);"></span></div>
+          <div class="qlist" id="kList"></div>
+        </div>
+      </aside>
+      <div class="card wordcard" id="kCard"></div>
+    </div>
+  </section>
+
+  <!-- ══ 문법 ══ -->
+  <section class="view" id="viewGrammar" role="tabpanel">
+    <div class="split">
+      <aside class="card pad">
+        <div class="fgroup">
+          <div class="flabel">분류</div>
+          <div class="chips" id="gGroup"></div>
+        </div>
+        <div class="fgroup">
+          <div class="flabel">암기 상태</div>
+          <select id="gState">
+            <option value="all">전체</option>
+            <option value="due">복습 예정</option>
+            <option value="todo">아직 안 본 것</option>
+            <option value="unknown">모르는 것</option>
+            <option value="unsure">애매한 것</option>
+            <option value="known">외운 것</option>
+          </select>
+        </div>
+        <button class="reset-btn" id="gReset">필터 초기화</button>
+        <div class="listwrap">
+          <div class="flabel" style="padding:12px 15px 6px;">문형 <span id="gCount" style="font-family:var(--mono);"></span></div>
+          <div class="qlist" id="gList"></div>
+        </div>
+      </aside>
+      <div class="card wordcard" id="gCard"></div>
+    </div>
+  </section>
+
+  <!-- ══ 약점 ══ -->
+  <section class="view" id="viewWeak" role="tabpanel">
+    <div id="weakBody"></div>
+  </section>
+
+  <!-- ══ 진도 ══ -->
+  <section class="view" id="viewStats" role="tabpanel">
+    <div id="statsBody"></div>
+  </section>
+</div>
+
+<script src="data/vocab.js"></script>
+<script src="data/kanji.js"></script>
+<script src="data/grammar.js"></script>
+<script src="js/app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
