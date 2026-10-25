@@ -7,9 +7,9 @@
  * 데이터를 추가·수정한 뒤 반드시 실행하세요.
  * ID 중복, 필드 누락, 읽기 표기 오류를 잡아냅니다.
  *
- * 주의: 일본어는 기계로 정답을 검증할 수 없습니다(정처기 코딩과 다름).
- *       이 검사기는 형식 오류만 잡아주고, 읽기·뜻의 정확성은
- *       교재와 교차 확인해야 합니다.
+ * 이 검사기는 '형식'만 봅니다(ID 중복, 필드 누락, 읽기에 한자 섞임 등).
+ * 읽기가 실제로 맞는지는 tools/verify-ja.mjs 가 Jisho(JMdict) 사전과 대조합니다.
+ *   node tools/verify-ja.mjs
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -158,4 +158,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log("✓ 형식 오류 없습니다.");
-console.log("  단, 일본어는 기계 검증이 불가능하므로 읽기·뜻은 교재와 교차 확인하세요.");
+console.log("  읽기 정확성은 `node tools/verify-ja.mjs` 로 사전(JMdict)과 대조하세요.");
+console.log("  한국어 뜻과 예문의 자연스러움은 사전으로 검증되지 않습니다 — 교재와 교차 확인 권장.");
