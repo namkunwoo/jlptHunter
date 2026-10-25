@@ -16,12 +16,16 @@
   var GRAMMAR = window.GRAMMAR || [];
   var STORE = "nihongo.v1";
   var DAILY_GOAL = 20; // 하루 목표 항목 수 (어휘 중심이라 정처기보다 높게)
+  var NEW_PER_DAY = 8; // 그중 '처음 보는 항목'으로 보장할 최소 개수.
+                       // 복습만 쌓이면 새 단어를 전혀 못 배우게 되므로 따로 할당한다.
+  var NEW_EVERY = 3;   // 복습이 쌓여 있어도 N개마다 한 번은 새 항목을 끼워넣는다
 
   /* ── 저장 ─────────────────────────────────────────── */
   var save = {
     // "v:v-001" / "k:k-001" / "g:g-001" -> {g:"known"|"unsure"|"unknown", box, due, seen}
     items: {},
-    days: {},      // "YYYY-MM-DD" -> 학습 개수
+    days: {},      // "YYYY-MM-DD" -> 학습 개수(복습 포함)
+    newDays: {},   // "YYYY-MM-DD" -> 그중 '처음 본' 항목 개수
     lastDay: null
   };
 
@@ -33,6 +37,7 @@
       if (!p || typeof p !== "object") return;
       save.items = p.items || {};
       save.days = p.days || {};
+      save.newDays = p.newDays || {};   // 이전 버전 기록에는 없으므로 기본값
       save.lastDay = p.lastDay || null;
     } catch (e) { /* 저장소를 못 쓰면 세션 내에서만 동작 */ }
   }
@@ -76,17 +81,20 @@
 
   function mark(kind, id, g) {
     var k = key(kind, id);
+    var wasNew = !save.items[k];          // 기록이 없었다 = 오늘 처음 본 것
     var r = save.items[k] || {};
     r.g = g;
     bumpBox(r, g === "known");
     save.items[k] = r;
     var d = todayStr();
     save.days[d] = (save.days[d] || 0) + 1;
+    if (wasNew) save.newDays[d] = (save.newDays[d] || 0) + 1;
     save.lastDay = d;
     persist();
   }
 
   function todayCount() { return save.days[todayStr()] || 0; }
+  function todayNewCount() { return save.newDays[todayStr()] || 0; }
 
   // 연속 학습일 — 오늘 아직 안 했으면 어제까지의 연속을 보여준다
   function streak() {
@@ -318,27 +326,9 @@
 
   /* ── 오늘 학습 (바로학습) ─────────────────────────
      우선순위: 복습기한 → 안 본 단어 → 안 본 한자 → 안 본 문법 */
-  function pickNext() {
+  // 아직 한 번도 안 본 항목 하나 — 단어를 가장 먼저 (어학의 기초)
+  function pickFresh() {
     var sk = quick.skipped;
-
-    // 1. 복습 기한이 된 것 — 약한 것(box 1) 먼저
-    var due = [];
-    allItems().forEach(function (x) {
-      var r = rec(x.kind, x.item.id);
-      if (isDue(r) && !sk[key(x.kind, x.item.id)]) {
-        due.push({ kind: x.kind, item: x.item, rec: r, reason: "due" });
-      }
-    });
-    if (due.length) {
-      due.sort(function (a, b) {
-        var ba = a.rec.box || 1, bb = b.rec.box || 1;
-        if (ba !== bb) return ba - bb;
-        return (a.rec.due || "") < (b.rec.due || "") ? -1 : 1;
-      });
-      return due[0];
-    }
-
-    // 2~4. 새 항목 — 단어를 가장 먼저 (어학의 기초)
     var order = [
       { kind: "v", arr: VOCAB, reason: "new-v" },
       { kind: "k", arr: KANJI, reason: "new-k" },
@@ -352,6 +342,34 @@
       if (fresh.length) return { kind: o.kind, item: fresh[0], rec: null, reason: o.reason };
     }
     return null;
+  }
+
+  function pickNext() {
+    var sk = quick.skipped;
+
+    // 복습 기한이 된 것 — 약한 것(box 1) 먼저
+    var due = [];
+    allItems().forEach(function (x) {
+      var r = rec(x.kind, x.item.id);
+      if (isDue(r) && !sk[key(x.kind, x.item.id)]) {
+        due.push({ kind: x.kind, item: x.item, rec: r, reason: "due" });
+      }
+    });
+    due.sort(function (a, b) {
+      var ba = a.rec.box || 1, bb = b.rec.box || 1;
+      if (ba !== bb) return ba - bb;
+      return (a.rec.due || "") < (b.rec.due || "") ? -1 : 1;
+    });
+
+    // 새 항목 할당량이 남았으면 복습 사이에 끼워넣는다.
+    // 복습을 항상 우선하면 2주쯤 지나 복습만 쌓이고 새 단어를 전혀 못 배운다.
+    var needNew = todayNewCount() < NEW_PER_DAY;
+    if (needNew && (due.length === 0 || todayCount() % NEW_EVERY === 0)) {
+      var fresh = pickFresh();
+      if (fresh) return fresh;
+    }
+    if (due.length) return due[0];
+    return pickFresh();
   }
 
   var REASON = {
