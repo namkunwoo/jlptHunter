@@ -221,7 +221,7 @@
     if (opts.hideAnswer) {
       h += '<div class="recall"><label class="recall-l" for="' + opts.inputId + '">' +
         '읽기와 뜻을 떠올려 적어보세요 <span class="recall-opt">선택 — 건너뛰어도 됩니다</span></label>' +
-        '<input type="text" id="' + opts.inputId + '" placeholder="예: えいきょう 영향" ' +
+        '<input type="text" id="' + opts.inputId + '" placeholder="예: がっこう 학교" ' +
         'autocomplete="off" autocapitalize="off" spellcheck="false" /></div>' +
         '<div class="toolbar"><button class="btn btn-main btn-sm" id="' + opts.flipId + '">정답 확인</button></div>' +
         '<div class="flash-a" id="' + opts.ansId + '">';
@@ -256,7 +256,7 @@
     if (opts.hideAnswer) {
       h += '<div class="recall"><label class="recall-l" for="' + opts.inputId + '">' +
         '음독과 훈독을 떠올려 적어보세요 <span class="recall-opt">선택</span></label>' +
-        '<input type="text" id="' + opts.inputId + '" placeholder="예: セイ / い(きる)" ' +
+        '<input type="text" id="' + opts.inputId + '" placeholder="예: ニチ / ひ" ' +
         'autocomplete="off" autocapitalize="off" spellcheck="false" /></div>' +
         '<div class="toolbar"><button class="btn btn-main btn-sm" id="' + opts.flipId + '">정답 확인</button></div>' +
         '<div class="flash-a" id="' + opts.ansId + '">';
@@ -296,7 +296,7 @@
     if (opts.hideAnswer) {
       h += '<div class="recall"><label class="recall-l" for="' + opts.inputId + '">' +
         '이 문형의 뜻을 떠올려 적어보세요 <span class="recall-opt">선택</span></label>' +
-        '<input type="text" id="' + opts.inputId + '" placeholder="예: ~덕분에" ' +
+        '<input type="text" id="' + opts.inputId + '" placeholder="예: ~할 뻔했다" ' +
         'autocomplete="off" autocapitalize="off" spellcheck="false" /></div>' +
         '<div class="toolbar"><button class="btn btn-main btn-sm" id="' + opts.flipId + '">정답 확인</button></div>' +
         '<div class="flash-a" id="' + opts.ansId + '">';

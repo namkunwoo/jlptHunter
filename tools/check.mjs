@@ -125,6 +125,32 @@ GRAMMAR.forEach((g, i) => {
   }
 });
 
+/* ── 입력란 안내문이 정답을 누출하지 않는지 ───────────── */
+// js/app.js 의 placeholder 는 '답안 형식'을 보여주는 용도다.
+// 거기에 데이터에 실재하는 읽기·뜻·문형을 쓰면 그 항목이 나왔을 때 정답이 노출된다.
+try {
+  const appSrc = readFileSync(join(ROOT, "js", "app.js"), "utf8");
+  const phs = [...appSrc.matchAll(/placeholder="예:\s*([^"]+)"/g)].map((m) => m[1].trim());
+  phs.forEach((ph) => {
+    const parts = ph.split("/").map((x) => x.trim()).filter(Boolean);
+    const leaks = [];
+    VOCAB.forEach((v) => {
+      if (parts.includes(v.r) || parts.includes(v.m) || ph === `${v.r} ${v.m}`) leaks.push(`어휘 ${v.id} ${v.w}`);
+    });
+    KANJI.forEach((k) => {
+      (k.on || []).forEach((o) => { if (parts.includes(o)) leaks.push(`한자 ${k.id} ${k.kanji} 음독`); });
+      (k.kun || []).forEach((u) => { if (parts.includes(u)) leaks.push(`한자 ${k.id} ${k.kanji} 훈독`); });
+    });
+    GRAMMAR.forEach((g) => {
+      const mean = (g.mean || "").replace(/\s*\(.*$/, "").trim();
+      if (mean && (parts.includes(mean) || ph === mean)) leaks.push(`문법 ${g.id} ${g.pattern}`);
+    });
+    if (leaks.length) {
+      errors.push(`입력란 안내문 "예: ${ph}" 가 실제 정답을 노출합니다 — ${[...new Set(leaks)].join(", ")}`);
+    }
+  });
+} catch (e) { warns.push(`안내문 검사를 건너뛰었습니다: ${e.message}`); }
+
 /* ── 결과 ─────────────────────────────────────────── */
 const posCount = {};
 VOCAB.forEach((v) => { posCount[v.pos] = (posCount[v.pos] || 0) + 1; });

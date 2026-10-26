@@ -1,5 +1,5 @@
 /* 니혼고 서비스워커 — 오프라인 지원 */
-var CACHE = "nihongo-v2";
+var CACHE = "nihongo-v3";
 var ASSETS = [
   "./",
   "./index.html",
