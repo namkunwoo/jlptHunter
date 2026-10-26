@@ -1241,11 +1241,30 @@ td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-alig
 .collo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
 .collo-i {
   font-size: 0.85rem;
-  padding: 7px 11px;
+  padding: 8px 11px;
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
   font-family: var(--jp);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 9px;
+}
+/* 표기 → 읽기 → 뜻. 좁은 화면에서는 줄바꿈된다 */
+.collo-c { font-weight: 600; }
+.collo-r {
+  font-size: 0.78rem;
+  color: var(--teal);
+  font-family: var(--jp);
+}
+.collo-m {
+  font-size: 0.78rem;
+  color: var(--ink-3, var(--ink-2));
+  margin-left: auto;
+}
+@media (max-width: 460px) {
+  .collo-m { margin-left: 0; flex-basis: 100%; }
 }
 
 /* ── 한자 카드 ───────────────────────────────────────── */

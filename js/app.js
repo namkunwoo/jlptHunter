@@ -237,7 +237,13 @@
 
     if (v.collo && v.collo.length) {
       h += '<div class="collo">' + v.collo.map(function (c) {
-        return '<div class="collo-i">' + esc(c) + '</div>';
+        // 이전 형식(문자열)도 깨지지 않게 받아준다
+        if (typeof c === "string") return '<div class="collo-i">' + esc(c) + '</div>';
+        return '<div class="collo-i">' +
+          '<span class="collo-c">' + esc(c.c) + '</span>' +
+          (c.r ? '<span class="collo-r">' + esc(c.r) + '</span>' : '') +
+          '<span class="collo-m">' + esc(c.m || "") + '</span>' +
+          '</div>';
       }).join("") + '</div>';
     }
     if (v.tip) h += '<div class="keypoint"><b>포인트</b> — ' + esc(v.tip) + '</div>';

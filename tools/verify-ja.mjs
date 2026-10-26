@@ -139,9 +139,66 @@ async function checkKanji() {
   console.log("");
 }
 
+// 연어 읽기 검증 —
+// 연어를 '한자덩어리 + 가나' 조각으로 쪼개, 각 한자 조각의 사전 읽기가
+// 적어둔 읽기 안에 순서대로 들어있는지 확인한다.
+// (활용형은 사전 표제어가 없을 수 있어 어간 일치까지만 본다)
+const KJ = /[\u4e00-\u9fff]/;
+function segment(jp) {
+  const out = []; let i = 0;
+  while (i < jp.length) {
+    if (KJ.test(jp[i])) {
+      let j = i; while (j < jp.length && KJ.test(jp[j])) j++;
+      let k = j; while (k < jp.length && /[\u3040-\u309f]/.test(jp[k])) k++;
+      out.push({ kj: true, kanji: jp.slice(i, j), raw: jp.slice(i, k) }); i = k;
+    } else {
+      let j = i; while (j < jp.length && !KJ.test(jp[j])) j++;
+      out.push({ kj: false, raw: jp.slice(i, j) }); i = j;
+    }
+  }
+  return out;
+}
+async function checkCollo() {
+  const list = [];
+  VOCAB.forEach((v) => (v.collo || []).forEach((c, i) => {
+    if (c && typeof c === "object" && c.c && c.r) list.push({ id: v.id, idx: i, ...c });
+  }));
+  console.log(`\n── 연어 ${list.length}개 읽기 대조 ───────────────────`);
+  let n = 0;
+  for (const c of list) {
+    n++;
+    process.stdout.write(`\r[${n}/${list.length}] ${c.id} ${c.c}            `);
+    let cursor = 0, failed = null;
+    for (const s of segment(c.c)) {
+      if (!s.kj) {   // 가나 조각은 적어둔 읽기에 그대로 있어야 한다
+        const at = c.r.indexOf(s.raw, cursor);
+        if (at < 0) { failed = `가나 "${s.raw}" 를 읽기에서 찾을 수 없음`; break; }
+        cursor = at + s.raw.length;
+        continue;
+      }
+      // 한자 조각: 전체형 → 한자부만 순서로 사전 읽기를 찾는다
+      let rs = [];
+      for (const probe of [s.raw, s.kanji]) {
+        const e = await lookup(probe);
+        if (e === null) continue;
+        rs = readingsOf(e, probe);
+        if (rs.length) break;
+      }
+      if (!rs.length) { warn.push(`${c.id} 연어 "${c.c}": '${s.raw}' 사전 표제어 없음 — 읽기 "${c.r}" 직접 확인 필요`); break; }
+      const hit = rs.find((r) => c.r.indexOf(r, cursor) >= 0);
+      if (!hit) { failed = `'${s.raw}' 의 사전 읽기 [${rs.join(", ")}] 가 "${c.r}" 안에 없음`; break; }
+      cursor = c.r.indexOf(hit, cursor) + hit.length;
+    }
+    if (failed) bad.push(`${c.id} 연어 "${c.c}" (${c.r}): ${failed}`);
+    else ok.push(c.id + ":collo" + c.idx);
+  }
+  console.log("");
+}
+
 const mode = process.argv[2];
 if (!mode || mode === "vocab") await checkVocab();
 if (!mode || mode === "kanji") await checkKanji();
+if (!mode || mode === "collo") await checkCollo();
 
 console.log("\n══ 결과 ══════════════════════════════════");
 console.log(`사전과 일치: ${ok.length}개`);

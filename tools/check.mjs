@@ -55,6 +55,14 @@ VOCAB.forEach((v, i) => {
   if (v.exr && HAS_KANJI.test(v.exr)) errors.push(`${at}: 예문읽기(exr)에 한자가 섞였습니다`);
   if (v.r && !HIRA_KATA.test(v.r)) warns.push(`${at}: 읽기에 히라가나/카타카나 외 문자가 있습니다 — "${v.r}"`);
   if (v.collo && !Array.isArray(v.collo)) errors.push(`${at}: collo는 배열이어야 합니다`);
+  (v.collo || []).forEach((c, ci) => {
+    if (typeof c === "string") { warns.push(`${at}: collo[${ci}]가 옛 문자열 형식입니다 — {c,r,m}으로 바꾸세요`); return; }
+    if (!c.c || !c.m) errors.push(`${at}: collo[${ci}]에 표기(c) 또는 뜻(m)이 없습니다`);
+    // 일본어 연어에는 읽기가 있어야 한다 (한국어 설명형은 예외)
+    const isJa = c.c && !/[\uac00-\ud7a3]/.test(c.c);
+    if (isJa && !c.r) errors.push(`${at}: collo[${ci}] "${c.c}" 에 읽기(r)가 없습니다`);
+    if (c.r && HAS_KANJI.test(c.r)) errors.push(`${at}: collo[${ci}] 읽기에 한자가 섞였습니다 — "${c.r}"`);
+  });
 });
 
 /* ── 한자 ─────────────────────────────────────────── */
