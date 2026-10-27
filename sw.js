@@ -1,5 +1,5 @@
 /* JLPT 헌터 서비스워커 — 오프라인 지원 */
-var CACHE = "jlpthunter-v8";
+var CACHE = "jlpthunter-v9";
 var ASSETS = [
   "./",
   "./index.html",

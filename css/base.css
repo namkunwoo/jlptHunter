@@ -1405,3 +1405,34 @@ td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-alig
   .read-split { grid-template-columns: 1fr; }
   .wordcard { padding: 18px 16px; }
 }
+
+/* 로마자 입력 안내 */
+.romaji-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 7px;
+  font-size: 0.74rem;
+  color: var(--ink-2);
+}
+.romaji-hint label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--teal);
+  white-space: nowrap;   /* '로마자 입력' 이 글자 단위로 쪼개지지 않게 */
+  flex: 0 0 auto;
+}
+.romaji-hint input[type="checkbox"] { margin: 0; cursor: pointer; }
+.romaji-ex {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  flex: 1 1 100%;        /* 예시는 좁은 화면에서 다음 줄로 */
+  line-height: 1.5;
+}
+@media (min-width: 560px) {
+  .romaji-ex { flex: 1 1 auto; }
+}

@@ -222,10 +222,61 @@
     drawFn();
   }
 
+  /* ── 로마자 입력 보조 ─────────────────────────────
+   * 데스크톱에서 일본어 입력기 없이 읽기를 적을 수 있게 한다.
+   * 인출 연습(답을 떠올려 적기)이 학습 효과의 핵심인데 입력이 번거로우면
+   * 그 단계를 건너뛰게 되므로, 로마자를 가나로 바꿔준다.
+   *   소문자 eikyou → えいきょう   /   대문자 NICHI → ニチ
+   * 한글·공백·기호는 그대로 통과하므로 「eikyou 영향」 도 그대로 쓸 수 있다.
+   */
+  var ROMAJI_KEY = "jlpt.romaji";
+  function romajiOn() {
+    try { return localStorage.getItem(ROMAJI_KEY) !== "off"; } catch (e) { return true; }
+  }
+  function setRomaji(on) {
+    try { localStorage.setItem(ROMAJI_KEY, on ? "on" : "off"); } catch (e) {}
+  }
+  function attachRomaji(el) {
+    if (!el || !global_Romaji()) return;
+    el.addEventListener("input", function () {
+      if (!romajiOn()) return;
+      // 커서가 맨 끝일 때만 변환한다. 중간을 고치는 중에 커서가 튀면 방해가 된다.
+      var atEnd = el.selectionStart === el.value.length && el.selectionEnd === el.value.length;
+      if (!atEnd) return;
+      var conv = global_Romaji().convert(el.value, { live: true });
+      if (conv !== el.value) {
+        el.value = conv;
+        el.selectionStart = el.selectionEnd = conv.length;
+      }
+    });
+    // 입력이 끝나면 보류해 둔 n 까지 확정한다 (hon → ほん)
+    function settle() {
+      if (!romajiOn()) return;
+      var conv = global_Romaji().convert(el.value);
+      if (conv !== el.value) el.value = conv;
+    }
+    el.addEventListener("blur", settle);
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") settle(); });
+  }
+  function global_Romaji() {
+    return (typeof window !== "undefined" && window.Romaji) ? window.Romaji : null;
+  }
+
   function boxChip(kind, id) {
     var r = rec(kind, id);
     if (!r || !r.box) return "";
     return '<span class="boxchip b' + Math.min(5, r.box) + '">' + r.box + '단계 · ' + (r.seen || 1) + '회</span>';
+  }
+
+  // 입력창 아래 안내 — 로마자로 쳐도 가나가 된다는 사실을 알려야 쓰인다
+  function romajiHintHTML(inputId) {
+    var on = romajiOn();
+    return '<div class="romaji-hint">' +
+      '<label><input type="checkbox" id="' + inputId + 'Rom"' + (on ? " checked" : "") + ' /> ' +
+      '로마자 입력</label>' +
+      '<span class="romaji-ex">' + (on
+        ? 'eikyou → えいきょう · 대문자는 가타카나 (NICHI → ニチ)'
+        : '꺼져 있음 — 일본어 입력기를 직접 쓰는 경우') + '</span></div>';
   }
 
   /* ── 카드 본문 ───────────────────────────────────── */
@@ -242,7 +293,8 @@
       h += '<div class="recall"><label class="recall-l" for="' + opts.inputId + '">' +
         '읽기와 뜻을 떠올려 적어보세요 <span class="recall-opt">선택 — 건너뛰어도 됩니다</span></label>' +
         '<input type="text" id="' + opts.inputId + '" placeholder="예: がっこう 학교" ' +
-        'autocomplete="off" autocapitalize="off" spellcheck="false" /></div>' +
+        'autocomplete="off" autocapitalize="off" spellcheck="false" />' +
+        romajiHintHTML(opts.inputId) + '</div>' +
         '<div class="toolbar"><button class="btn btn-main btn-sm" id="' + opts.flipId + '">정답 확인</button></div>' +
         '<div class="flash-a" id="' + opts.ansId + '">';
     }
@@ -464,6 +516,12 @@
     $("qFlip").addEventListener("click", flip);
     $("qRecall").addEventListener("keydown", function (e) {
       if (e.key === "Enter") { e.preventDefault(); flip(); }
+    });
+    attachRomaji($("qRecall"));
+    var romBox = $("qRecallRom");
+    if (romBox) romBox.addEventListener("change", function () {
+      setRomaji(romBox.checked);
+      drawQuick();   // 안내 문구를 다시 그린다
     });
     setTimeout(function () { var i = $("qRecall"); if (i) i.focus(); }, 60);
   }
