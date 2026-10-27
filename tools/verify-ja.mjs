@@ -195,10 +195,44 @@ async function checkCollo() {
   console.log("");
 }
 
+// 예문 읽기 검증 — 연어와 같은 방식으로 exr 를 대조한다
+async function checkEx() {
+  console.log(`\n── 예문 읽기 ${VOCAB.length}개 대조 ─────────────────`);
+  let n = 0;
+  for (const v of VOCAB) {
+    n++;
+    process.stdout.write(`\r[${n}/${VOCAB.length}] ${v.id} ${v.w}            `);
+    if (!v.ex || !v.exr) { bad.push(`${v.id}: 예문 또는 예문읽기 없음`); continue; }
+    let cursor = 0, failed = null, skipped = false;
+    for (const s of segment(v.ex)) {
+      if (!s.kj) {
+        const at = v.exr.indexOf(s.raw, cursor);
+        if (at < 0) { failed = `가나 "${s.raw}" 를 예문읽기에서 찾을 수 없음`; break; }
+        cursor = at + s.raw.length; continue;
+      }
+      let rs = [];
+      for (const probe of [s.raw, s.kanji]) {
+        const e = await lookup(probe);
+        if (e === null) continue;
+        rs = readingsOf(e, probe);
+        if (rs.length) break;
+      }
+      if (!rs.length) { warn.push(`${v.id} 예문: '${s.raw}' 사전 표제어 없음 — 직접 확인 필요`); skipped = true; break; }
+      const hit = rs.find((r) => v.exr.indexOf(r, cursor) >= 0);
+      if (!hit) { failed = `'${s.raw}' 의 사전 읽기 [${rs.slice(0,3).join(", ")}] 가 예문읽기 안에 없음`; break; }
+      cursor = v.exr.indexOf(hit, cursor) + hit.length;
+    }
+    if (failed) bad.push(`${v.id} 예문 "${v.ex}" (${v.exr}): ${failed}`);
+    else if (!skipped) ok.push(v.id + ":ex");
+  }
+  console.log("");
+}
+
 const mode = process.argv[2];
 if (!mode || mode === "vocab") await checkVocab();
 if (!mode || mode === "kanji") await checkKanji();
 if (!mode || mode === "collo") await checkCollo();
+if (!mode || mode === "ex") await checkEx();
 
 console.log("\n══ 결과 ══════════════════════════════════");
 console.log(`사전과 일치: ${ok.length}개`);
