@@ -1,5 +1,5 @@
-/* 니혼고 서비스워커 — 오프라인 지원 */
-var CACHE = "nihongo-v5";
+/* JLPT 헌터 서비스워커 — 오프라인 지원 */
+var CACHE = "jlpthunter-v6";
 var ASSETS = [
   "./",
   "./index.html",

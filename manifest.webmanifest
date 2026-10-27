@@ -1,6 +1,6 @@
 {
-  "name": "니혼고 · JLPT N2 학습",
-  "short_name": "니혼고",
+  "name": "JLPT 헌터 · N2 학습",
+  "short_name": "JLPT 헌터",
   "description": "JLPT N2 어휘·한자·문법을 간격 반복으로 매일 학습합니다.",
   "start_url": "./index.html",
   "scope": "./",
