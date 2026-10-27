@@ -202,6 +202,26 @@
     });
   }
 
+  /**
+   * 채점 후 다음 항목으로 넘긴다.
+   * 외운 카드를 계속 보고 있으면 학습이 진행되지 않으므로,
+   * 단어·한자·문법 탭도 '오늘 학습' 탭처럼 자동으로 넘어가야 한다.
+   *
+   * atBefore 는 채점 직전의 목록 위치다. 채점으로 필터에서 빠졌으면
+   * (예: '아직 안 본 것'만 보고 있을 때) 같은 자리가 곧 다음 항목이 되므로
+   * 위치를 그대로 쓰고, 목록에 남아 있으면 한 칸 뒤로 옮긴다.
+   */
+  function advancePick(listFn, pickKey, curId, atBefore, drawFn) {
+    var list = listFn();
+    if (!list.length) { drawFn(); return; }
+    var stillThere = -1;
+    list.forEach(function (x, i) { if (x.id === curId) stillThere = i; });
+    var next = stillThere >= 0 ? stillThere + 1 : atBefore;
+    if (next >= list.length) next = list.length - 1;   // 마지막이면 그대로 머문다
+    ui[pickKey] = list[next].id;
+    drawFn();
+  }
+
   function boxChip(kind, id) {
     var r = rec(kind, id);
     if (!r || !r.box) return "";
@@ -479,8 +499,12 @@
 
     var v = VOCAB.filter(function (x) { return x.id === ui.vPick; })[0];
     if (!v) return;
+    var vAt = -1;
+    list.forEach(function (x, i) { if (x.id === v.id) vAt = i; });
     $("vCard").innerHTML = vocabCardHTML(v) + gradeBtns("v");
-    bindGrade("vGrade", "v", v.id, function () { drawVocab(); });
+    bindGrade("vGrade", "v", v.id, function () {
+      advancePick(vocabList, "vPick", v.id, vAt, drawVocab);
+    });
   }
 
   /* ── 한자 탭 ─────────────────────────────────────── */
@@ -514,8 +538,12 @@
 
     var k = KANJI.filter(function (x) { return x.id === ui.kPick; })[0];
     if (!k) return;
+    var kAt = -1;
+    list.forEach(function (x, i) { if (x.id === k.id) kAt = i; });
     $("kCard").innerHTML = kanjiCardHTML(k) + gradeBtns("k");
-    bindGrade("kGrade", "k", k.id, function () { drawKanji(); });
+    bindGrade("kGrade", "k", k.id, function () {
+      advancePick(kanjiList, "kPick", k.id, kAt, drawKanji);
+    });
   }
 
   /* ── 문법 탭 ─────────────────────────────────────── */
@@ -549,8 +577,12 @@
 
     var g = GRAMMAR.filter(function (x) { return x.id === ui.gPick; })[0];
     if (!g) return;
+    var gAt = -1;
+    list.forEach(function (x, i) { if (x.id === g.id) gAt = i; });
     $("gCard").innerHTML = grammarCardHTML(g) + gradeBtns("g");
-    bindGrade("gGrade", "g", g.id, function () { drawGrammar(); });
+    bindGrade("gGrade", "g", g.id, function () {
+      advancePick(grammarList, "gPick", g.id, gAt, drawGrammar);
+    });
   }
 
   /* ── 약점 ─────────────────────────────────────────── */
