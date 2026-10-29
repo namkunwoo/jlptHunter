@@ -144,23 +144,65 @@
     if (st === "due") return isDue(rec(kind, id));
     return g === st;
   }
+  /* ── 학습 우선 정렬 ───────────────────────────────
+   * 탭을 열면 이미 외운 것이 먼저 나오면 안 된다. 지금 공부해야 할 것부터
+   * 보여야 한다. 그래서 기본 정렬을 '학습 우선'으로 둔다.
+   *   1 복습 기한이 된 것 (약한 단계 먼저)
+   *   2 모르겠음으로 표시한 것
+   *   3 애매함으로 표시한 것
+   *   4 아직 안 본 것
+   *   5 외웠고 기한도 안 된 것  ← 맨 뒤
+   * 같은 순위 안에서는 등록 순서를 지켜 위치가 들쭉날쭉하지 않게 한다.
+   */
+  var SORT_KEY = "jlpt.sort";
+  function sortMode() {
+    try { return localStorage.getItem(SORT_KEY) === "data" ? "data" : "study"; }
+    catch (e) { return "study"; }
+  }
+  function setSortMode(m) {
+    try { localStorage.setItem(SORT_KEY, m); } catch (e) {}
+  }
+  function studyRank(kind, id) {
+    var r = rec(kind, id);
+    if (!r) return 4;                       // 아직 안 본 것
+    if (isDue(r)) return 1;                 // 복습 기한
+    if (r.g === "unknown") return 2;
+    if (r.g === "unsure") return 3;
+    return 5;                               // 외웠고 기한 전
+  }
+  function sortForStudy(kind, arr) {
+    if (sortMode() === "data") return arr;
+    return arr.map(function (x, i) { return { x: x, i: i }; })
+      .sort(function (a, b) {
+        var ra = studyRank(kind, a.x.id), rb = studyRank(kind, b.x.id);
+        if (ra !== rb) return ra - rb;
+        if (ra === 1) {                     // 복습 기한끼리는 약한 단계 먼저
+          var ba = (rec(kind, a.x.id) || {}).box || 1;
+          var bb = (rec(kind, b.x.id) || {}).box || 1;
+          if (ba !== bb) return ba - bb;
+        }
+        return a.i - b.i;                   // 나머지는 등록 순서
+      })
+      .map(function (p) { return p.x; });
+  }
+
   function vocabList() {
-    return VOCAB.filter(function (v) {
+    return sortForStudy("v", VOCAB.filter(function (v) {
       if (ui.vPos.length && ui.vPos.indexOf(v.pos) === -1) return false;
       return stateOK("v", v.id, ui.vState);
-    });
+    }));
   }
   function kanjiList() {
-    return KANJI.filter(function (k) {
+    return sortForStudy("k", KANJI.filter(function (k) {
       if (ui.kLevel.length && ui.kLevel.indexOf(k.level) === -1) return false;
       return stateOK("k", k.id, ui.kState);
-    });
+    }));
   }
   function grammarList() {
-    return GRAMMAR.filter(function (g) {
+    return sortForStudy("g", GRAMMAR.filter(function (g) {
       if (ui.gGroup.length && ui.gGroup.indexOf(g.group) === -1) return false;
       return stateOK("g", g.id, ui.gState);
-    });
+    }));
   }
 
   /* ── 칩 ───────────────────────────────────────────── */
@@ -214,10 +256,23 @@
   function advancePick(listFn, pickKey, curId, atBefore, drawFn) {
     var list = listFn();
     if (!list.length) { drawFn(); return; }
-    var stillThere = -1;
-    list.forEach(function (x, i) { if (x.id === curId) stillThere = i; });
-    var next = stillThere >= 0 ? stillThere + 1 : atBefore;
-    if (next >= list.length) next = list.length - 1;   // 마지막이면 그대로 머문다
+
+    var next;
+    if (sortMode() === "study") {
+      // 학습 우선 정렬에서는 채점으로 순위가 바뀌어 항목이 자리를 옮긴다.
+      // (외웠음 -> 맨 뒤로) 그래서 '원래 있던 자리'가 곧 다음에 볼 항목이다.
+      next = atBefore;
+    } else {
+      var stillThere = -1;
+      list.forEach(function (x, i) { if (x.id === curId) stillThere = i; });
+      next = stillThere >= 0 ? stillThere + 1 : atBefore;
+    }
+    if (next >= list.length) next = list.length - 1;
+    if (next < 0) next = 0;
+    // 방금 채점한 항목이 또 나오면 한 칸 더 — 같은 카드를 두 번 보지 않게
+    if (list[next].id === curId && list.length > 1) {
+      next = next + 1 < list.length ? next + 1 : 0;
+    }
     ui[pickKey] = list[next].id;
     drawFn();
   }
@@ -859,6 +914,20 @@
     $("vState").addEventListener("change", function () { ui.vState = this.value; drawVocab(); });
     $("kState").addEventListener("change", function () { ui.kState = this.value; drawKanji(); });
     $("gState").addEventListener("change", function () { ui.gState = this.value; drawGrammar(); });
+
+    // 정렬은 세 탭이 같은 설정을 공유한다. 바꾸면 선택도 처음으로 되돌려
+    // '지금 공부할 것'이 바로 뜨게 한다.
+    ["vSort", "kSort", "gSort"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.value = sortMode();
+      el.addEventListener("change", function () {
+        setSortMode(el.value);
+        ui.vPick = null; ui.kPick = null; ui.gPick = null;
+        ["vSort", "kSort", "gSort"].forEach(function (o) { if ($(o)) $(o).value = el.value; });
+        drawVocab(); drawKanji(); drawGrammar();
+      });
+    });
     $("vReset").addEventListener("click", function () {
       ui.vPos = []; ui.vState = "all"; $("vState").value = "all"; drawVocab();
     });
